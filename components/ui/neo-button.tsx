@@ -1,0 +1,97 @@
+"use client";
+
+import React from "react";
+import { motion, HTMLMotionProps } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+interface NeoButtonProps extends HTMLMotionProps<"button"> {
+    variant?: "primary" | "secondary" | "gold" | "green" | "outline" | "ghost";
+    size?: "sm" | "md" | "lg";
+    isThunder?: boolean;
+    layerColor?: string; // e.g. "bg-purple-400"
+    children: React.ReactNode;
+}
+
+const NeoButton = ({
+    children,
+    onClick,
+    variant = "primary",
+    className = "",
+    size = "md",
+    isThunder = false,
+    layerColor,
+    ...props
+}: NeoButtonProps) => {
+    const sizes = {
+        sm: "px-3 py-1 text-sm",
+        md: "px-6 py-3 text-base",
+        lg: "px-8 py-4 text-xl",
+    };
+
+    const getBgColor = () => {
+        if (variant === "primary") return "bg-primary";
+        if (variant === "secondary") return "bg-accent";
+        if (variant === "gold") return "bg-gold";
+        if (variant === "green") return "bg-green";
+        if (variant === "outline") return "bg-white";
+        return "bg-white";
+    };
+
+    const isGhost = variant === "ghost";
+    const bgColorClass = isGhost ? "bg-transparent" : getBgColor();
+    const textColorClass = variant === "primary" ? "text-white" : "text-black";
+
+    // Variants for the Thunder shake effect
+    const thunderVariants = {
+        rest: { x: 0, y: 0 },
+        hover: {
+            x: [0, -2, 2, -2, 2, 0],
+            y: [0, 1, -1, 1, 0],
+            transition: { duration: 0.2, repeat: Infinity },
+        },
+        press: { scale: 0.95 },
+    };
+
+    return (
+        <motion.button
+            onClick={onClick}
+            className={cn("relative group", className)}
+            initial="rest"
+            whileHover="hover"
+            whileTap="press"
+            variants={isThunder ? thunderVariants : undefined}
+            {...props}
+        >
+            {/* Deepest Shadow Layer (Black) - Only visible if layerColor is present for that 3D stack look */}
+            {!isGhost && layerColor && (
+                <span className="absolute inset-0 bg-black rounded-xl translate-x-[8px] translate-y-[8px] transition-transform duration-200 ease-out group-hover:translate-x-[10px] group-hover:translate-y-[10px] group-active:translate-x-0 group-active:translate-y-0" />
+            )}
+
+            {/* Middle Layer (Color) or Standard Shadow */}
+            {!isGhost && (
+                <span
+                    className={cn(
+                        "absolute inset-0 rounded-xl border-2 border-black transition-transform duration-200 ease-out",
+                        layerColor ? layerColor : "bg-black",
+                        "translate-x-[4px] translate-y-[4px] group-hover:translate-x-[6px] group-hover:translate-y-[6px]",
+                        "group-active:translate-x-0 group-active:translate-y-0"
+                    )}
+                />
+            )}
+
+            {/* Top Button Layer */}
+            <span
+                className={cn(
+                    "relative block border-2 border-black rounded-xl font-bold transition-transform duration-200 ease-out group-active:translate-x-[4px] group-active:translate-y-[4px] flex items-center justify-center gap-2",
+                    sizes[size],
+                    textColorClass,
+                    bgColorClass
+                )}
+            >
+                {children}
+            </span>
+        </motion.button>
+    );
+};
+
+export default NeoButton;

@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3e90f0;
+  --color-secondary: #3e90f0;
+  --color-accent: #a5f3fc;
+  --color-gold: #d8d174;
+  --color-green: #b6c454;
+  --color-dark: #1f2937;
+  --color-midnight: #0f172a;
+
+  --font-sans: var(--font-outfit);
+
+  --animate-grid-move: grid-move 4s linear infinite;
+
+  @keyframes grid-move {
+    0% {
+      background-position: 0 0;
+    }
+
+    100% {
+      background-position: 40px 40px;
+    }
+  }
+}
+
+/* Custom Utilities */
+@utility animated-grid {
+  background-size: 40px 40px;
+  background-image: radial-gradient(circle, var(--color-primary) 2px, transparent 2px);
+  opacity: 0.15;
+  animation: grid-move 4s linear infinite;
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Global Styles */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+  /* Account for fixed navbar */
+}
+
+body {
+  background-color: #f0fdfa;
+  /* Very light cyan bg */
+  color: var(--color-dark);
+  overflow-x: hidden;
+}
+
+/* GPU Acceleration for Scroll Animations */
+@utility gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border: 2px solid black;
+  border-radius: 10px;
+}
+
+/* Thunder Effect Utilities */
+.group:hover .zap-icon {
+  fill: #ffd700;
+  filter: drop-shadow(0 0 5px #ffd700);
+  transform: scale(1.1);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
