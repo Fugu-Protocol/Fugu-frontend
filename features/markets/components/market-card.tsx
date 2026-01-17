@@ -74,21 +74,16 @@ const MarketCard = ({ market }: MarketCardProps) => {
                     </h3>
 
                     {/* Progress Bars */}
-                    <div className="space-y-2">
-                        <div className="relative h-10 w-full flex rounded-xl overflow-hidden border-2 border-black">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${market.yes}%` }}
-                                className="bg-[#b6c454] h-full flex items-center pl-3 font-bold text-sm"
-                            >
-                                YES {market.yes}%
-                            </motion.div>
-                            <div className="bg-red-300 h-full flex-grow flex items-center justify-end pr-3 font-bold text-sm">
-                                NO {market.no}%
-                            </div>
-                            {/* Center divider */}
-                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-black/20 transform -translate-x-1/2 border-dashed border-l-2 border-black"></div>
-                        </div>
+                    {/* Bottom: Buy Buttons */}
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                        <button className="flex items-center justify-between px-3 py-2 rounded-lg bg-green-50 border-2 border-transparent hover:border-green-500 hover:bg-green-100 transition-colors group/yes">
+                            <span className="text-sm font-bold text-green-700">Yes</span>
+                            <span className="text-sm font-black text-green-800">{market.yes}%</span>
+                        </button>
+                        <button className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border-2 border-transparent hover:border-red-500 hover:bg-red-100 transition-colors group/no">
+                            <span className="text-sm font-bold text-red-700">No</span>
+                            <span className="text-sm font-black text-red-800">{market.no}%</span>
+                        </button>
                     </div>
                 </div>
             </motion.div>

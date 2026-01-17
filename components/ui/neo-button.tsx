@@ -3,14 +3,19 @@
 import React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface NeoButtonProps extends HTMLMotionProps<"button"> {
     variant?: "primary" | "secondary" | "gold" | "green" | "outline" | "ghost";
     size?: "sm" | "md" | "lg";
     isThunder?: boolean;
     layerColor?: string; // e.g. "bg-purple-400"
+    href?: string; // New prop for Link support
+    contentClassName?: string; // Custom class for the inner button element
     children: React.ReactNode;
 }
+
+const MotionLink = motion.create(Link);
 
 const NeoButton = ({
     children,
@@ -20,6 +25,8 @@ const NeoButton = ({
     size = "md",
     isThunder = false,
     layerColor,
+    href,
+    contentClassName,
     ...props
 }: NeoButtonProps) => {
     const sizes = {
@@ -52,17 +59,9 @@ const NeoButton = ({
         press: { scale: 0.95 },
     };
 
-    return (
-        <motion.button
-            onClick={onClick}
-            className={cn("relative group", className)}
-            initial="rest"
-            whileHover="hover"
-            whileTap="press"
-            variants={isThunder ? thunderVariants : undefined}
-            {...props}
-        >
-            {/* Deepest Shadow Layer (Black) - Only visible if layerColor is present for that 3D stack look */}
+    const content = (
+        <>
+            {/* Deepest Shadow Layer (Black) */}
             {!isGhost && layerColor && (
                 <span className="absolute inset-0 bg-black rounded-xl translate-x-[8px] translate-y-[8px] transition-transform duration-200 ease-out group-hover:translate-x-[10px] group-hover:translate-y-[10px] group-active:translate-x-0 group-active:translate-y-0" />
             )}
@@ -85,11 +84,42 @@ const NeoButton = ({
                     "relative block border-2 border-black rounded-xl font-bold transition-transform duration-200 ease-out group-active:translate-x-[4px] group-active:translate-y-[4px] flex items-center justify-center gap-2",
                     sizes[size],
                     textColorClass,
-                    bgColorClass
+                    bgColorClass,
+                    contentClassName
                 )}
             >
                 {children}
             </span>
+        </>
+    );
+
+    const commonProps = {
+        className: cn("relative group inline-block", className),
+        initial: "rest",
+        whileHover: "hover",
+        whileTap: "press",
+        variants: isThunder ? thunderVariants : undefined,
+    };
+
+    if (href) {
+        return (
+            <MotionLink
+                href={href}
+                {...(commonProps as any)}
+                onClick={onClick as any}
+            >
+                {content}
+            </MotionLink>
+        );
+    }
+
+    return (
+        <motion.button
+            onClick={onClick}
+            {...commonProps}
+            {...props}
+        >
+            {content}
         </motion.button>
     );
 };

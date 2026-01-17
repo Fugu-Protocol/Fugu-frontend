@@ -1,20 +1,11 @@
 import {
-    ArrowRight,
     DollarSign,
     Activity,
     ShieldCheck,
     Wallet,
-    Bitcoin,
-    Coins,
-    Zap,
     TrendingUp,
     Globe,
-    Vote,
-    Car,
-    BarChart3,
-    Crown,
 } from "lucide-react";
-import React from "react";
 
 // ==========================================
 // LANDING PAGE DATA

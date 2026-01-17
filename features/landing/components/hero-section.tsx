@@ -117,7 +117,13 @@ const HeroSection = () => {
                     transition={{ duration: 0.5, delay: 0.6 }}
                     className="flex flex-col md:flex-row gap-4 justify-center items-center"
                 >
-                    <NeoButton size="lg" variant="primary" isThunder={true} layerColor="bg-accent">
+                    <NeoButton
+                        href="/market"
+                        size="lg"
+                        variant="primary"
+                        isThunder={true}
+                        layerColor="bg-accent"
+                    >
                         Launch App{" "}
                         <Zap className="ml-2 zap-icon transition-all duration-300" />
                     </NeoButton>
