@@ -120,7 +120,7 @@ export default function ChatInterface() {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-[#3e90f0] border-2 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] text-white flex items-center justify-center transition-all z-50 animate-bounce"
+                className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-[#3e90f0] border-2 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] text-white flex items-center justify-center transition-all z-[100] animate-bounce"
             >
                 <span className="text-3xl">🤖</span>
             </button>
@@ -129,7 +129,7 @@ export default function ChatInterface() {
 
     // Main Chat Window (Neo-Brutalist Style)
     return (
-        <div className="fixed bottom-6 right-6 flex flex-col h-[600px] w-full max-w-[400px] bg-white rounded-xl border-2 border-black shadow-[8px_8px_0px_0px_#000] overflow-hidden z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="fixed bottom-6 right-6 flex flex-col h-[600px] w-full max-w-[400px] bg-white rounded-xl border-2 border-black shadow-[8px_8px_0px_0px_#000] overflow-hidden z-[100] animate-in slide-in-from-bottom-10 fade-in duration-300">
             {/* Header */}
             <div className="p-4 border-b-2 border-black bg-[#3e90f0] flex justify-between items-center">
                 <div className="flex items-center gap-3">

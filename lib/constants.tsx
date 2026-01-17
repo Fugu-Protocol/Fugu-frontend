@@ -416,3 +416,20 @@ export const PROFILE_MOCK_DATA = {
         { id: 3, action: "Redeemed", target: "WIN", market: "Solana $200", amount: "$1,200.00", time: "3d ago" }
     ]
 };
+
+// ==========================================
+// LEADERBOARD MOCK DATA
+// ==========================================
+
+export const LEADERBOARD_DATA = [
+    { rank: 1, name: "SuiWhale.sui", pnl: "+$452,000", roi: "320%", winRate: "78%", avatar: "🐋", address: "0x12...34df" },
+    { rank: 2, name: "CryptoNinja", pnl: "+$320,500", roi: "210%", winRate: "65%", avatar: "🥷", address: "0xab...8812" },
+    { rank: 3, name: "PufferKing", pnl: "+$120,000", roi: "180%", winRate: "71%", avatar: "🐡", address: "0x89...11aa" },
+    { rank: 4, name: "MoonBoi99", pnl: "+$98,400", roi: "145%", winRate: "55%", avatar: "🚀", address: "0xcc...99bb" },
+    { rank: 5, name: "AlphaSeeker", pnl: "+$85,200", roi: "120%", winRate: "60%", avatar: "🦁", address: "0xdd...44ee" },
+    { rank: 6, name: "DegenTrader", pnl: "+$72,100", roi: "95%", winRate: "48%", avatar: "🎲", address: "0xee...22ff" },
+    { rank: 7, name: "SuiPanda", pnl: "+$64,000", roi: "88%", winRate: "62%", avatar: "🐼", address: "0xff...11cc" },
+    { rank: 8, name: "DiamondHands", pnl: "+$51,300", roi: "75%", winRate: "59%", avatar: "💎", address: "0x11...22dd" },
+    { rank: 9, name: "BearMarketSuits", pnl: "+$42,800", roi: "60%", winRate: "45%", avatar: "🐻", address: "0x22...33ee" },
+    { rank: 10, name: "ToTheMoon", pnl: "+$31,500", roi: "40%", winRate: "52%", avatar: "🌕", address: "0x33...44ff" },
+];

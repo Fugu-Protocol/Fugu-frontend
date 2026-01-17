@@ -127,7 +127,11 @@ const HeroSection = () => {
                         Launch App{" "}
                         <Zap className="ml-2 zap-icon transition-all duration-300" />
                     </NeoButton>
-                    <NeoButton size="lg" variant="outline">
+                    <NeoButton
+                        size="lg"
+                        variant="outline"
+                        href="/leaderboard"
+                    >
                         View Leaderboard
                     </NeoButton>
                 </motion.div>

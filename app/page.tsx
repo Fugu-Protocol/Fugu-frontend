@@ -14,7 +14,7 @@ import ScrollReveal from "@/components/shared/scroll-reveal";
 import ScrollProgress from "@/components/shared/scroll-progress";
 import ScrollAnimation from "@/components/shared/scroll-animation";
 import NeoButton from "@/components/ui/neo-button";
-import ChatInterface from "@/components/ai/ChatInterface";
+
 import { MARKETS, CATEGORIES, BENTO_STATS } from "@/lib/constants";
 
 // Mock Data
@@ -133,7 +133,7 @@ export default function Home() {
         <FAQSection />
 
         <Footer />
-        <ChatInterface />
+
       </div>
     </>
   );

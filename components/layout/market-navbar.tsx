@@ -152,9 +152,11 @@ const MarketNavbar = () => {
                                 <DropdownMenuSeparator className="bg-gray-100 my-1" />
 
                                 {/* Menu Items */}
-                                <DropdownMenuItem className="flex items-center gap-2 p-2.5 text-sm font-bold text-gray-700 focus:bg-gray-100 focus:text-black rounded-lg cursor-pointer transition-colors">
-                                    <Trophy size={16} className="text-yellow-500" />
-                                    Leaderboard
+                                <DropdownMenuItem asChild>
+                                    <Link href="/leaderboard" className="flex items-center gap-2 p-2.5 text-sm font-bold text-gray-700 focus:bg-gray-100 focus:text-black rounded-lg cursor-pointer transition-colors w-full">
+                                        <Trophy size={16} className="text-yellow-500" />
+                                        Leaderboard
+                                    </Link>
                                 </DropdownMenuItem>
 
                                 <DropdownMenuItem className="flex items-center gap-2 p-2.5 text-sm font-bold text-gray-700 focus:bg-gray-100 focus:text-black rounded-lg cursor-pointer transition-colors">
