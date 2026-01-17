@@ -34,7 +34,7 @@ const MarketDetailView: React.FC<MarketDetailViewProps> = ({ slug }) => {
         ? {
             id: `out_${market.id}`,
             name: market.question,
-            imageUrl: `https://picsum.photos/id/${1000 + market.id}/100/100`,
+            imageUrl: market.imageUrl || `https://picsum.photos/id/${1000 + market.id}/100/100`,
             volume: market.volume,
             percentage: market.yes,
             change: ((market.id * 7) % 20) - 5, // Deterministic change based on market id
@@ -44,7 +44,7 @@ const MarketDetailView: React.FC<MarketDetailViewProps> = ({ slug }) => {
         : {
             id: "out_default",
             name: "Unknown Market",
-            imageUrl: "https://picsum.photos/id/1005/100/100",
+            imageUrl: "https://img.icons8.com/color/200/question-mark.png",
             volume: "$0",
             percentage: 50,
             change: 0,
@@ -100,8 +100,16 @@ const MarketDetailView: React.FC<MarketDetailViewProps> = ({ slug }) => {
                     {/* Header */}
                     <div className="space-y-4">
                         <div className="flex items-start gap-4">
-                            <div className="w-16 h-16 bg-white border-2 border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] overflow-hidden shrink-0 flex items-center justify-center text-4xl">
-                                {market.mainIcon}
+                            <div className="w-16 h-16 bg-white border-2 border-black rounded-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] overflow-hidden shrink-0 flex items-center justify-center">
+                                {market.imageUrl ? (
+                                    <img
+                                        src={market.imageUrl}
+                                        alt={market.question}
+                                        className="w-12 h-12 object-contain"
+                                    />
+                                ) : (
+                                    <span className="text-4xl">{market.mainIcon}</span>
+                                )}
                             </div>
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-black text-black leading-tight tracking-tight">

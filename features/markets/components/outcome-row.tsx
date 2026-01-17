@@ -32,7 +32,7 @@ const OutcomeRow: React.FC<OutcomeRowProps> = ({
                     <img
                         src={outcome.imageUrl}
                         alt={outcome.name}
-                        className="w-full h-full object-cover rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        className="w-full h-full object-contain p-1.5 bg-white rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                     />
                     {/* Tiny info icon */}
                     <div className="absolute -bottom-1 -right-1 bg-white border border-black rounded-full p-0.5 text-black z-10">

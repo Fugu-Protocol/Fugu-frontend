@@ -20,6 +20,7 @@ import {
 import NeoButton from "@/components/ui/neo-button";
 
 import MarketCommandMenu from "@/features/markets/components/market-command-menu";
+import DepositDialog from "@/components/shared/deposit-dialog";
 
 const MarketNavbar = () => {
     const [walletConnected, setWalletConnected] = useState(false);
@@ -84,14 +85,16 @@ const MarketNavbar = () => {
                         </div>
 
                         {/* Deposit Button */}
-                        <NeoButton
-                            variant="primary"
-                            size="sm"
-                            className="mr-2 hidden md:flex shadow-none bg-[#6366f1] hover:bg-[#5558dd] border-none text-white rounded-lg"
-                            contentClassName="px-4 py-2"
-                        >
-                            Deposit
-                        </NeoButton>
+                        <DepositDialog balance={50.00}>
+                            <NeoButton
+                                variant="primary"
+                                size="sm"
+                                className="mr-2 hidden md:flex shadow-none bg-[#6366f1] hover:bg-[#5558dd] border-none text-white rounded-lg"
+                                contentClassName="px-4 py-2"
+                            >
+                                Deposit
+                            </NeoButton>
+                        </DepositDialog>
 
                         {/* Notifications Popover */}
                         <Popover>

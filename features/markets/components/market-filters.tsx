@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, SlidersHorizontal, ArrowDownUp } from "lucide-react";
+import React from "react";
+import { Search, ArrowDownUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-    { label: "Assets", id: "Gold & Silver" }, // Mapping "Assets" to existing logic if needed
+    { label: "Assets", id: "Gold & Silver" },
     { label: "US Index", id: "Indexes" },
-    { label: "Economics", id: "Economics" }, // New mock cat
+    { label: "Economics", id: "Economics" },
     { label: "Crypto", id: "Crypto" },
     { label: "US Stocks", id: "Stocks" },
 ];
@@ -15,11 +15,27 @@ const CATEGORIES = [
 const FILTERS = ["24h Vol", "Total Vol", "Newest"];
 const STATUSES = ["All", "Active", "Resolved"];
 
-const MarketFilters = () => {
-    const [activeCategory, setActiveCategory] = useState("All");
-    const [activeFilter, setActiveFilter] = useState("Total Vol");
-    const [activeStatus, setActiveStatus] = useState("Active");
+interface MarketFiltersProps {
+    activeCategory: string;
+    setActiveCategory: (category: string) => void;
+    activeStatus: string;
+    setActiveStatus: (status: string) => void;
+    activeSort: string;
+    setActiveSort: (sort: string) => void;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+}
 
+const MarketFilters: React.FC<MarketFiltersProps> = ({
+    activeCategory,
+    setActiveCategory,
+    activeStatus,
+    setActiveStatus,
+    activeSort,
+    setActiveSort,
+    searchQuery,
+    setSearchQuery,
+}) => {
     return (
         <div className="flex flex-col gap-6 w-full mb-8">
             {/* Top Bar: Search & Main Filters */}
@@ -59,6 +75,8 @@ const MarketFilters = () => {
                     <input
                         type="text"
                         placeholder="Search markets..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-lg border-2 border-gray-200 focus:border-black outline-none transition-colors font-medium"
                     />
                 </div>
@@ -94,10 +112,10 @@ const MarketFilters = () => {
                         {FILTERS.map((filter) => (
                             <button
                                 key={filter}
-                                onClick={() => setActiveFilter(filter)}
+                                onClick={() => setActiveSort(filter)}
                                 className={cn(
                                     "px-3 py-1.5 rounded-lg border-2 text-sm font-bold transition-all",
-                                    activeFilter === filter
+                                    activeSort === filter
                                         ? "border-black bg-accent text-black shadow-[2px_2px_0px_0px_#000]"
                                         : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                                 )}

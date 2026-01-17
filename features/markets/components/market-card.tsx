@@ -11,6 +11,7 @@ interface Market {
     category: string;
     icon: string;
     mainIcon: string;
+    imageUrl?: string;
     color: string;
     question: string;
     yes: number;
@@ -25,6 +26,7 @@ interface MarketCardProps {
 
 const MarketCard = ({ market }: MarketCardProps) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const marketSlug = generateSlug(market.question);
 
     return (
@@ -65,9 +67,18 @@ const MarketCard = ({ market }: MarketCardProps) => {
                         <motion.div
                             animate={{ rotate: isHovered ? [0, -10, 10, 0] : 0 }}
                             transition={{ duration: 0.5 }}
-                            className="text-6xl z-10"
+                            className="z-10 flex items-center justify-center"
                         >
-                            {market.mainIcon}
+                            {market.imageUrl && !imageError ? (
+                                <img
+                                    src={market.imageUrl}
+                                    alt={market.question}
+                                    className="w-20 h-20 object-contain"
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <span className="text-6xl">{market.mainIcon}</span>
+                            )}
                         </motion.div>
                     </div>
 
