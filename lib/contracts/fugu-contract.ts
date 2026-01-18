@@ -5,13 +5,13 @@
  */
 
 // Contract Constants
-export const FUGU_PACKAGE_ID = "0x48092661b1945d135a01b29449a16f05933e8bc3e603c5634610c408c39e5353";
+export const FUGU_PACKAGE_ID = "0x2d5a4531454503ef41c953da0e6f7a5bf5ab0ec15522f426b916363fd2303b16";
 export const FUGU_MODULE = "fugu_core";
 export const USDC_MODULE = "USDC";
 export const CLOCK_ID = "0x6";
 
 // You need to replace these with actual object IDs from your deployment
-export const GLOBAL_CONFIG_ID = ""; // GlobalConfig object ID - needs to be set after deployment lookup
+export const GLOBAL_CONFIG_ID = "0x3cea8c8192f43dd56598432930c6c9a712b4b14cb1fad79a6917fa84eb886965"; // GlobalConfig object ID - needs to be set after deployment lookup
 export const USDC_TREASURY_CAP_ID = ""; // USDC TreasuryCap object ID - needs to be set
 
 // Event types
@@ -22,11 +22,12 @@ export const OUTCOME_NO = 0;
 export const OUTCOME_YES = 1;
 
 // Category constants (based on your market categories)
+// Category constants (aligned with contract: 0: crypto, 1: stocks, 2: assets, 3: economics)
 export const CATEGORY = {
-    ECONOMICS: 0,
+    CRYPTO: 0,
     STOCKS: 1,
-    CRYPTO: 2,
-    GOLD_SILVER: 3,
+    GOLD_SILVER: 2, // Assets
+    ECONOMICS: 3,
     INDEXES: 4,
 } as const;
 

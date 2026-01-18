@@ -8,6 +8,12 @@ import {
 } from "lucide-react";
 
 // ==========================================
+// CONTRACT CONSTANTS
+// ==========================================
+export const FUGU_PACKAGE_ID = "0x2d5a4531454503ef41c953da0e6f7a5bf5ab0ec15522f426b916363fd2303b16";
+export const GLOBAL_CONFIG_ID = "0x3cea8c8192f43dd56598432930c6c9a712b4b14cb1fad79a6917fa84eb886965";
+
+// ==========================================
 // LANDING PAGE DATA
 // ==========================================
 
