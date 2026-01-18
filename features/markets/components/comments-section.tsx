@@ -22,10 +22,11 @@ interface Comment {
     timeAgo: string;
     text: string;
     likes: number;
+    isLiked?: boolean;
     replies?: Comment[];
 }
 
-const MOCK_COMMENTS: Comment[] = [
+const INITIAL_COMMENTS: Comment[] = [
     {
         id: "c1",
         user: {
@@ -35,6 +36,7 @@ const MOCK_COMMENTS: Comment[] = [
         timeAgo: "51m ago",
         text: "Anybody can tip me $1 please so I can withdraw it to my Crypto Wallet? I'm trying to deposit money but i need to have some ETH for gas fees so I can withdraw the funds from Phantom to Polymarket. It's mean a lot to me I'll tip you $2 back, just reply to my comment and you'll see a tip",
         likes: 0,
+        isLiked: false,
         replies: [
             {
                 id: "r1",
@@ -46,6 +48,7 @@ const MOCK_COMMENTS: Comment[] = [
                 timeAgo: "45m ago",
                 text: "@yowwy Report 👆",
                 likes: 0,
+                isLiked: false,
             },
         ],
     },
@@ -59,6 +62,7 @@ const MOCK_COMMENTS: Comment[] = [
         timeAgo: "2h ago",
         text: "who else like the odds? https://x.com/MEPPOnPM/status/2011661155245461569",
         likes: 0,
+        isLiked: false,
     },
     {
         id: "c3",
@@ -69,17 +73,97 @@ const MOCK_COMMENTS: Comment[] = [
         timeAgo: "2h ago",
         text: "does anyonne have a spare dollars",
         likes: 0,
+        isLiked: false,
     },
 ];
 
 const CommentsSection: React.FC = () => {
     const [activeTab, setActiveTab] = useState("Comments");
+    const [comments, setComments] = useState<Comment[]>(INITIAL_COMMENTS);
+    const [newComment, setNewComment] = useState("");
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState("");
+
+    const handlePostComment = () => {
+        if (!newComment.trim()) return;
+
+        const newCommentObj: Comment = {
+            id: `new_${Date.now()}`,
+            user: {
+                name: "You",
+                color: "bg-gradient-to-r from-cyan-500 to-blue-500",
+            },
+            timeAgo: "Just now",
+            text: newComment,
+            likes: 0,
+            isLiked: false,
+            replies: []
+        };
+
+        setComments([newCommentObj, ...comments]);
+        setNewComment("");
+    };
+
+    const toggleLike = (commentId: string) => {
+        const updateLikes = (list: Comment[]): Comment[] => {
+            return list.map(comment => {
+                if (comment.id === commentId) {
+                    const isLiked = comment.isLiked;
+                    return {
+                        ...comment,
+                        likes: isLiked ? comment.likes - 1 : comment.likes + 1,
+                        isLiked: !isLiked
+                    };
+                }
+                if (comment.replies) {
+                    return { ...comment, replies: updateLikes(comment.replies) };
+                }
+                return comment;
+            });
+        };
+        setComments(updateLikes(comments));
+    };
+
+    const handleReplySubmit = (parentId: string) => {
+        if (!replyText.trim()) return;
+
+        const newReply: Comment = {
+            id: `reply_${Date.now()}`,
+            user: {
+                name: "You",
+                color: "bg-gradient-to-r from-cyan-500 to-blue-500",
+            },
+            timeAgo: "Just now",
+            text: replyText,
+            likes: 0,
+            isLiked: false
+        };
+
+        const addReply = (list: Comment[]): Comment[] => {
+            return list.map(comment => {
+                if (comment.id === parentId) {
+                    return {
+                        ...comment,
+                        replies: comment.replies ? [...comment.replies, newReply] : [newReply]
+                    };
+                }
+                if (comment.replies) {
+                    return { ...comment, replies: addReply(comment.replies) };
+                }
+                return comment;
+            });
+        };
+
+        setComments(addReply(comments));
+        setReplyingTo(null);
+        setReplyText("");
+    };
 
     return (
         <div className="bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             {/* Tabs */}
             <div className="flex border-b-2 border-black overflow-x-auto no-scrollbar">
-                {["Comments (3,748)", "Top Holders", "Activity"].map((tab) => {
+                {[`Comments (${comments.length})`].map((tab) => {
                     const isActive = activeTab === tab.split(" ")[0];
                     return (
                         <button
@@ -107,11 +191,17 @@ const CommentsSection: React.FC = () => {
                 <div className="mb-8">
                     <div className="relative">
                         <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
                             placeholder="Add a comment..."
                             className="w-full h-28 p-4 bg-slate-50 border-2 border-black rounded-xl resize-none focus:outline-none focus:bg-white focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-slate-400 font-medium text-sm"
                         />
                         <div className="absolute bottom-3 right-3">
-                            <button className="bg-blue-600 text-white font-black px-5 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none text-xs uppercase tracking-wider">
+                            <button
+                                onClick={handlePostComment}
+                                disabled={!newComment.trim()}
+                                className="bg-blue-600 text-white font-black px-5 py-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none text-xs uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
+                            >
                                 Post
                             </button>
                         </div>
@@ -130,14 +220,6 @@ const CommentsSection: React.FC = () => {
                                 <option>Top</option>
                             </select>
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer select-none group">
-                            <div className="w-5 h-5 border-2 border-black rounded flex items-center justify-center bg-white group-hover:bg-slate-50 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                {/* Checkbox logic would go here */}
-                            </div>
-                            <span className="font-bold text-sm text-slate-600 group-hover:text-black">
-                                Holders
-                            </span>
-                        </label>
                     </div>
                     <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-300">
                         <Flag size={12} strokeWidth={3} />
@@ -147,7 +229,7 @@ const CommentsSection: React.FC = () => {
 
                 {/* Comments List */}
                 <div className="space-y-8">
-                    {MOCK_COMMENTS.map((comment) => (
+                    {comments.map((comment) => (
                         <div key={comment.id} className="group">
                             <div className="flex gap-4">
                                 {/* Avatar */}
@@ -174,8 +256,8 @@ const CommentsSection: React.FC = () => {
                                         {comment.user.position && (
                                             <span
                                                 className={`text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] ${comment.user.position.type === "Yes"
-                                                        ? "bg-emerald-300 text-black"
-                                                        : "bg-rose-300 text-black"
+                                                    ? "bg-emerald-300 text-black"
+                                                    : "bg-rose-300 text-black"
                                                     }`}
                                             >
                                                 {comment.user.position.amount}{" "}
@@ -192,21 +274,46 @@ const CommentsSection: React.FC = () => {
                                     </p>
 
                                     <div className="flex items-center gap-5">
-                                        <button className="flex items-center gap-1.5 text-slate-400 hover:text-rose-500 transition-colors group/like">
+                                        <button
+                                            onClick={() => toggleLike(comment.id)}
+                                            className={`flex items-center gap-1.5 transition-colors group/like ${comment.isLiked ? "text-rose-500" : "text-slate-400 hover:text-rose-500"}`}
+                                        >
                                             <Heart
                                                 size={16}
                                                 strokeWidth={3}
-                                                className="group-hover/like:fill-rose-500"
+                                                className={comment.isLiked ? "fill-rose-500" : "group-hover/like:fill-rose-500"}
                                             />
                                             <span className="text-xs font-bold">{comment.likes}</span>
                                         </button>
-                                        <button className="text-xs font-bold text-slate-400 hover:text-black flex items-center gap-1">
+                                        <button
+                                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                            className="text-xs font-bold text-slate-400 hover:text-black flex items-center gap-1"
+                                        >
                                             Reply
                                         </button>
                                         <button className="ml-auto text-slate-300 hover:text-black">
                                             <MoreHorizontal size={16} strokeWidth={3} />
                                         </button>
                                     </div>
+
+                                    {/* Reply Input */}
+                                    {replyingTo === comment.id && (
+                                        <div className="mt-4 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <textarea
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                placeholder={`Reply to ${comment.user.name}...`}
+                                                className="flex-1 p-3 bg-slate-50 border-2 border-black rounded-xl resize-none focus:outline-none focus:bg-white transition-all text-sm h-20"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={() => handleReplySubmit(comment.id)}
+                                                className="bg-black text-white px-4 rounded-lg font-bold text-xs h-10 self-end hover:bg-slate-800 transition-colors"
+                                            >
+                                                Reply
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Nested Replies */}
                                     {comment.replies && comment.replies.length > 0 && (
@@ -234,8 +341,8 @@ const CommentsSection: React.FC = () => {
                                                             {reply.user.position && (
                                                                 <span
                                                                     className={`text-[10px] font-black px-1.5 py-0.5 rounded border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] ${reply.user.position.type === "Yes"
-                                                                            ? "bg-emerald-300 text-black"
-                                                                            : "bg-rose-300 text-black"
+                                                                        ? "bg-emerald-300 text-black"
+                                                                        : "bg-rose-300 text-black"
                                                                         }`}
                                                                 >
                                                                     {reply.user.position.amount}{" "}
@@ -261,11 +368,14 @@ const CommentsSection: React.FC = () => {
                                                             )}
                                                         </p>
                                                         <div className="flex items-center gap-4">
-                                                            <button className="flex items-center gap-1.5 text-slate-400 hover:text-rose-500 transition-colors group/like">
+                                                            <button
+                                                                onClick={() => toggleLike(reply.id)}
+                                                                className={`flex items-center gap-1.5 transition-colors group/like ${reply.isLiked ? "text-rose-500" : "text-slate-400 hover:text-rose-500"}`}
+                                                            >
                                                                 <Heart
                                                                     size={14}
                                                                     strokeWidth={3}
-                                                                    className="group-hover/like:fill-rose-500"
+                                                                    className={reply.isLiked ? "fill-rose-500" : "group-hover/like:fill-rose-500"}
                                                                 />
                                                                 <span className="text-xs font-bold">
                                                                     {reply.likes}

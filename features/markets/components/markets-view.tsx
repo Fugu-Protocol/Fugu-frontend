@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import MarketFilters from "./market-filters";
 import MarketCard from "./market-card";
 import { MARKETS } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Extended market type with additional fields for filtering
 interface Market {
@@ -21,6 +22,8 @@ interface Market {
     status?: "active" | "resolved";
     createdAt?: Date;
 }
+
+const ITEMS_PER_PAGE = 8; // Showing 8 items per page
 
 // Helper function to parse volume string to number
 const parseVolume = (volumeStr: string): number => {
@@ -39,6 +42,12 @@ const MarketsView = () => {
     const [activeStatus, setActiveStatus] = useState("Active");
     const [activeSort, setActiveSort] = useState("Total Vol");
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeCategory, activeStatus, activeSort, searchQuery]);
 
     // Add mock data for status and createdAt
     const marketsWithMetadata: Market[] = useMemo(() => {
@@ -84,8 +93,7 @@ const MarketsView = () => {
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(market =>
-                market.question.toLowerCase().includes(query) ||
-                market.category.toLowerCase().includes(query)
+                market.question.toLowerCase().includes(query)
             );
         }
 
@@ -105,6 +113,20 @@ const MarketsView = () => {
 
         return filtered;
     }, [allMarketsBase, activeCategory, activeStatus, activeSort, searchQuery]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredMarkets.length / ITEMS_PER_PAGE);
+    const paginatedMarkets = filteredMarkets.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
 
     return (
         <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
@@ -128,20 +150,20 @@ const MarketsView = () => {
 
             {/* Results count */}
             <div className="mb-4 text-sm font-bold text-gray-500">
-                {filteredMarkets.length} markets found
+                Showing {paginatedMarkets.length} of {filteredMarkets.length} markets
             </div>
 
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={`${activeCategory}-${activeStatus}-${activeSort}-${searchQuery}`}
+                    key={`${activeCategory}-${activeStatus}-${activeSort}-${searchQuery}-${currentPage}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
                 >
-                    {filteredMarkets.length > 0 ? (
-                        filteredMarkets.map((market, index) => (
+                    {paginatedMarkets.length > 0 ? (
+                        paginatedMarkets.map((market, index) => (
                             <MarketCard key={`${market.id}-${index}`} market={market} />
                         ))
                     ) : (
@@ -153,6 +175,42 @@ const MarketsView = () => {
                     )}
                 </motion.div>
             </AnimatePresence>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4">
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+
+                    <div className="flex gap-2">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <button
+                                key={page}
+                                onClick={() => handlePageChange(page)}
+                                className={`w-10 h-10 rounded-lg font-bold border-2 border-black transition-all ${currentPage === page
+                                    ? "bg-primary text-white shadow-[2px_2px_0px_0px_#000]"
+                                    : "bg-white hover:bg-gray-100"
+                                    }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border-2 border-black bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        <ChevronRight size={24} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
