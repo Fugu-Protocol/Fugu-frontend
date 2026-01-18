@@ -8,11 +8,13 @@
 export const FUGU_PACKAGE_ID = "0x2d5a4531454503ef41c953da0e6f7a5bf5ab0ec15522f426b916363fd2303b16";
 export const FUGU_MODULE = "fugu_core";
 export const USDC_MODULE = "USDC";
+export const USDC_PACKAGE_ID = "0x58502cb7f97a55a837144433983674ddff16405e008d0b6423730030f443ba9f";
+export const USDC_COIN_TYPE = `${USDC_PACKAGE_ID}::USDC::USDC`;
 export const CLOCK_ID = "0x6";
 
 // You need to replace these with actual object IDs from your deployment
 export const GLOBAL_CONFIG_ID = "0x3cea8c8192f43dd56598432930c6c9a712b4b14cb1fad79a6917fa84eb886965"; // GlobalConfig object ID - needs to be set after deployment lookup
-export const USDC_TREASURY_CAP_ID = ""; // USDC TreasuryCap object ID - needs to be set
+export const USDC_TREASURY_CAP_ID = "0xb222f7e39f0553e6730c07523f236ae7feae738a22c6bac964d541cfad723217"; // USDC TreasuryCap object ID
 
 // Event types
 export const MARKET_CREATED_EVENT = `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::MarketCreatedEvent`;
@@ -85,5 +87,5 @@ export const FUGU_TARGETS = {
     IS_TRADING_PAUSED: `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::is_trading_paused`,
 
     // USDC
-    MINT_USDC: `${FUGU_PACKAGE_ID}::${USDC_MODULE}::mint`,
+    MINT_USDC: `${USDC_PACKAGE_ID}::${USDC_MODULE}::mint`,
 } as const;

@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Info, Loader2 } from "lucide-react";
 import type { Outcome } from "../types";
-import { useCurrentAccount } from "@mysten/dapp-kit";
-import { ConnectButton } from "@mysten/dapp-kit";
+import { useCurrentAccount, ConnectButton } from "@mysten/dapp-kit";
 import {
     useBuyShares,
     useSellShares,
@@ -46,19 +45,23 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
     const txDigest = orderType === "buy" ? buyDigest : sellDigest;
 
     // Display Logic for Prices
-    const baseYesPrice = outcome.yesPrice;
-    const spreadYesPrice = Math.round(baseYesPrice * 1.005);
-    const spreadNoPrice = 101 - spreadYesPrice;
+    // yesPrice is passed as 0-100 int from parent
+    const baseYesPrice = outcome.yesPrice ?? 50;
 
-    // Current price per share in Cents? Or Dollars?
-    // outcome.yesPrice is likely 50 (cents).
+    // Add spread for display if needed, or just use raw price
+    // Since we are now using real contract data, we might not need artificial spread unless UI wants it.
+    // Let's keep it simple: Use price as is.
+    const spreadYesPrice = baseYesPrice;
+    const spreadNoPrice = 100 - spreadYesPrice;
+
+    // Current price per share in Cents
     const currentPriceCents = outcomeType === "Yes" ? spreadYesPrice : spreadNoPrice;
     const currentPriceDollars = currentPriceCents / 100;
 
     // Estimated Cost (USDC)
     // Simple estimation: shares * price. 
-    // In real bonding curve, price moves. We'll add a buffer for the "estimatedCost" sent to contract.
-    // Buffer: 5%?
+    // In real bonding curve, price moves with size. Buffer remains useful.
+    // Buffer: 5%
     const estimatedCostDollars = sharesAmount * currentPriceDollars;
     const estimatedCostUSDC = Math.ceil(estimatedCostDollars * 1_000_000 * 1.05); // 6 decimals + 5% slippage/buffer
 

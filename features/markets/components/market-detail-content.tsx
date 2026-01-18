@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BarChart, Clock, Share2, Star, ArrowLeft, Check } from "lucide-react";
+import { BarChart, Clock, Share2, Star, ArrowLeft, Check, Copy } from "lucide-react";
 import type { Outcome } from "../types";
 import OutcomeRow from "./outcome-row";
-import TradePanel from "./trade-panel";
+import TradePanel from "@/features/markets/components/trade-panel";
 import CommentsSection from "./comments-section";
 import InteractiveChart from "./interactive-chart";
 
@@ -30,10 +30,10 @@ const MarketDetailContent: React.FC<MarketDetailContentProps> = ({ market }) => 
         name: market.question,
         imageUrl: market.imageUrl || market.mainIcon,
         volume: market.volume || "$0",
-        percentage: market.yes || 50,
+        percentage: market.yesPrice ? Math.round(market.yesPrice * 100) : (market.yes || 50),
         change: 0,
-        yesPrice: market.yes || 50,
-        noPrice: market.no || 50,
+        yesPrice: market.yesPrice ? Math.round(market.yesPrice * 100) : (market.yes || 50),
+        noPrice: market.noPrice ? Math.round(market.noPrice * 100) : (market.no || 50),
         // Pass real ID if needed for trading
     };
 
@@ -115,7 +115,7 @@ const MarketDetailContent: React.FC<MarketDetailContentProps> = ({ market }) => 
                                             onClick={handleShare}
                                             className="p-2 bg-white hover:bg-slate-50 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none"
                                         >
-                                            {isCopied ? <Check size={20} strokeWidth={2.5} className="text-green-600" /> : <Share2 size={20} strokeWidth={2.5} />}
+                                            {isCopied ? <Check size={20} strokeWidth={2.5} className="text-green-600" /> : <Copy size={20} strokeWidth={2.5} />}
                                         </button>
                                     </div>
                                 </div>

@@ -8,7 +8,7 @@ import { ReactNode } from "react";
 
 const { networkConfig } = createNetworkConfig({
     localnet: { url: getFullnodeUrl("localnet") },
-    testnet: { url: getFullnodeUrl("testnet") },
+    testnet: { url: "https://fullnode.testnet.sui.io:443" },
     mainnet: { url: getFullnodeUrl("mainnet") },
 });
 

@@ -4,38 +4,40 @@ import React, { useState } from "react";
 import { Copy, CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function TestnetPage() {
-    const [address, setAddress] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-    const [isWalletConnected, setIsWalletConnected] = useState(false);
+import { ConnectModal, useCurrentAccount, useSuiClient } from "@mysten/dapp-kit";
+import { useMintUSDC } from "@/lib/contracts/use-fugu-contract";
 
-    const handleConnectWallet = () => {
-        // Simulate wallet connection
-        setIsWalletConnected(true);
-        setAddress("0xa1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"); // Mock Address
-    };
+export default function FaucetPage() {
+    const account = useCurrentAccount();
+    const client = useSuiClient();
+    const [address, setAddress] = useState("");
+    // remove local loading/status state as we use hook's state
+    const [isConnectOpen, setIsConnectOpen] = useState(false);
+    const [hasGas, setHasGas] = useState<boolean>(true);
+
+    const { mint, status, error, txDigest } = useMintUSDC();
+
+    // Auto-fill address when wallet connects
+    React.useEffect(() => {
+        if (account?.address) {
+            setAddress(account.address);
+
+            // Check for SUI balance (gas)
+            client.getBalance({ owner: account.address }).then((res) => {
+                const balance = Number(res.totalBalance);
+                setHasGas(balance > 0);
+            }).catch(console.error);
+        }
+    }, [account, client]);
 
     const handleRequest = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!address) return;
 
-        setLoading(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-            setStatus("success");
-
-            // Don't clear address if connected
-            if (!isWalletConnected) {
-                setAddress("");
-            }
-
-            // Reset status after a few seconds
-            setTimeout(() => setStatus("idle"), 3000);
-        }, 1500);
+        await mint(address, 1000); // Mint 1000 USDC
     };
+
+    const loading = status === "pending";
 
     return (
         <div className="min-h-screen bg-[#F0F9FF] relative overflow-hidden flex flex-col items-center justify-center font-sans p-4">
@@ -72,14 +74,14 @@ export default function TestnetPage() {
                                 transition={{ delay: 0.3, type: "spring" }}
                                 className="absolute top-8 right-8 z-10 bg-white border-2 border-black px-4 py-2 rounded-xl font-bold text-lg shadow-[4px_4px_0px_0px_#000000]"
                             >
-                                Testnet
+                                Faucet
                             </motion.div>
                         </div>
                     </div>
 
                     <div className="mb-8 mt-2">
                         <h1 className="text-4xl md:text-5xl font-black mb-3 text-[#0F172A] tracking-tight">
-                            Testnet USDC Request
+                            Faucet USDC Request
                         </h1>
                         <p className="text-gray-500 font-bold text-lg">
                             Get dummy USDC to <span className="text-blue-500">test</span> your prediction skills.
@@ -89,16 +91,21 @@ export default function TestnetPage() {
                     <div className="w-full h-1 bg-gray-100 mb-8 rounded-full"></div>
 
                     {/* Connect Wallet Button */}
-                    {!isWalletConnected && (
+                    {!account && (
                         <div className="mb-6 flex justify-end">
-                            <button
-                                type="button"
-                                onClick={handleConnectWallet}
-                                className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 text-sm"
-                            >
-                                <Wallet size={16} />
-                                Connect Wallet
-                            </button>
+                            <ConnectModal
+                                trigger={
+                                    <button
+                                        type="button"
+                                        className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 text-sm"
+                                    >
+                                        <Wallet size={16} />
+                                        Connect Wallet
+                                    </button>
+                                }
+                                open={isConnectOpen}
+                                onOpenChange={setIsConnectOpen}
+                            />
                         </div>
                     )}
 
@@ -119,12 +126,12 @@ export default function TestnetPage() {
                                     placeholder="Enter your Sui testnet address..."
                                     value={address}
                                     onChange={(e) => setAddress(e.target.value)}
-                                    disabled={loading || isWalletConnected}
+                                    disabled={loading || !!account}
                                     className="w-full px-6 py-5 rounded-2xl border-4 border-black bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all text-xl font-bold placeholder:text-gray-300 disabled:bg-gray-50 disabled:cursor-not-allowed"
                                 />
 
                                 {/* Paste Button (Optional Enhancement) */}
-                                {!isWalletConnected && (
+                                {!account && (
                                     <button
                                         type="button"
                                         onClick={() => navigator.clipboard.readText().then(text => setAddress(text))}
@@ -135,10 +142,17 @@ export default function TestnetPage() {
                                     </button>
                                 )}
                             </div>
-                            {isWalletConnected && (
+                            {account && (
                                 <p className="text-green-600 font-bold text-sm flex items-center gap-1">
                                     <CheckCircle2 size={16} /> Wallet Connected
                                 </p>
+                            )}
+
+                            {!hasGas && account && (
+                                <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-xl text-yellow-800 text-sm font-bold animate-pulse">
+                                    ⚠️ No SUI tokens found! You need SUI for gas fees.
+                                    <a href="https://discord.gg/sui" target="_blank" className="underline ml-1">Get SUI here</a>.
+                                </div>
                             )}
                         </div>
 
@@ -160,7 +174,7 @@ export default function TestnetPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <span>Request Testnet Tokens</span>
+                                        <span>Request Faucet Tokens</span>
                                     </>
                                 )}
                             </div>
@@ -168,6 +182,11 @@ export default function TestnetPage() {
                             {/* Shine Effect */}
                             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine" />
                         </button>
+                        {error && (
+                            <div className="bg-red-50 border-2 border-red-500 text-red-600 p-4 rounded-xl font-bold text-center animate-shake">
+                                Error: {error}
+                            </div>
+                        )}
                     </form>
 
                 </div>
@@ -178,26 +197,28 @@ export default function TestnetPage() {
                     </p>
                 </div>
 
-            </motion.main>
+            </motion.main >
 
             {/* Toast Notification for success */}
             <AnimatePresence>
-                {status === "success" && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 50 }}
-                        className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-[8px_8px_0px_0px_#000000] border-4 border-black z-50"
-                    >
-                        <CheckCircle2 className="w-8 h-8 fill-white text-green-500" />
-                        <div className="flex flex-col">
-                            <span className="text-lg">Tokens Sent!</span>
-                            <span className="text-sm opacity-90 font-normal">Check your wallet in a few seconds.</span>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                {
+                    status === "success" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 50 }}
+                            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-[8px_8px_0px_0px_#000000] border-4 border-black z-50"
+                        >
+                            <CheckCircle2 className="w-8 h-8 fill-white text-green-500" />
+                            <div className="flex flex-col">
+                                <span className="text-lg">Tokens Sent!</span>
+                                <span className="text-sm opacity-90 font-normal">Check your wallet in a few seconds.</span>
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
 
-        </div>
+        </div >
     );
 }
