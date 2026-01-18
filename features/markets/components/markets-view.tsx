@@ -4,6 +4,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import MarketFilters from "./market-filters";
 import MarketCard from "./market-card";
 import { MARKETS } from "@/lib/constants";
+import { useMarketEvents } from "@/lib/contracts/use-fugu-contract";
+import { CATEGORY } from "@/lib/contracts/fugu-contract";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -37,6 +39,8 @@ const parseVolume = (volumeStr: string): number => {
 };
 
 const MarketsView = () => {
+    const { markets: realMarkets, loading } = useMarketEvents();
+
     // Filter states
     const [activeCategory, setActiveCategory] = useState("All");
     const [activeStatus, setActiveStatus] = useState("Active");
@@ -49,14 +53,47 @@ const MarketsView = () => {
         setCurrentPage(1);
     }, [activeCategory, activeStatus, activeSort, searchQuery]);
 
-    // Add mock data for status and createdAt
+    // Combine mock data with real blockchain data
     const marketsWithMetadata: Market[] = useMemo(() => {
-        return MARKETS.map((market, index) => ({
-            ...market,
-            status: index % 5 === 0 ? "resolved" as const : "active" as const,
-            createdAt: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)), // Each market 1 day older
-        }));
-    }, []);
+        // Map real markets to UI format
+        const mappedRealMarkets: Market[] = realMarkets.map(m => {
+            // Determine category string and icon
+            let categoryName = "Crypto";
+            let mainIcon = "https://cryptologos.cc/logos/bitcoin-btc-logo.png";
+            let color = "bg-blue-100";
+
+            // Simple mapping based on category ID (you can refine this)
+            if (m.category === CATEGORY.ECONOMICS) { categoryName = "Economics"; color = "bg-yellow-100"; }
+            else if (m.category === CATEGORY.STOCKS) { categoryName = "Stocks"; color = "bg-green-100"; }
+            else if (m.category === CATEGORY.CRYPTO) { categoryName = "Crypto"; color = "bg-blue-100"; }
+            else if (m.category === CATEGORY.GOLD_SILVER) { categoryName = "Gold & Silver"; color = "bg-orange-100"; }
+            else if (m.category === CATEGORY.INDEXES) { categoryName = "Indexes"; color = "bg-purple-100"; }
+
+            return {
+                id: parseInt(m.market_id.slice(0, 8), 16), // Fake numeric ID for key, real ID is needed for actions
+                marketId: m.market_id, // Store real ID
+                category: categoryName,
+                icon: "💰",
+                mainIcon: m.image_url || mainIcon,
+                color: color,
+                question: m.market_name,
+                yes: 50, // Default start value
+                no: 50, // Default start value
+                volume: "$0",
+                isHot: true,
+                status: "active",
+                createdAt: new Date(Number(m.timestamp)),
+            } as Market;
+        });
+
+        // const mockMarkets = MARKETS.map((market, index) => ({
+        //     ...market,
+        //     status: index % 5 === 0 ? "resolved" as const : "active" as const,
+        //     createdAt: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)), // Each market 1 day older
+        // }));
+
+        return [...mappedRealMarkets]; // , ...mockMarkets];
+    }, [realMarkets]);
 
     // Use markets directly without duplication
     const allMarketsBase = marketsWithMetadata;
