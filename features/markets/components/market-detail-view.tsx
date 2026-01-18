@@ -45,7 +45,9 @@ const MarketDetailView: React.FC<MarketDetailViewProps> = ({ slug }) => {
             status: "active" as const,
             imageUrl: foundMarket.image_url,
             // Store real ID for contract interactions
-            realId: foundMarket.market_id
+            realId: foundMarket.market_id,
+            deadline: foundMarket.deadline,
+            description: foundMarket.description,
         };
 
         // Pass adapted market to content renderer

@@ -14,7 +14,9 @@ import {
     FUGU_PACKAGE_ID,
     FUGU_MODULE,
     MARKET_CREATED_EVENT,
-    MarketCreatedEvent
+    MarketCreatedEvent,
+    GLOBAL_CONFIG_ID,
+    FUGU_TARGETS
 } from "./fugu-contract";
 
 export type TransactionStatus = "idle" | "pending" | "success" | "error";
@@ -247,4 +249,51 @@ export function useMarketDetails(marketId: string | null) {
     }, [client, marketId]);
 
     return { market, loading, error, fetchMarket };
+    return { market, loading, error, fetchMarket };
+}
+
+/**
+ * Hook to fetch Global Config (Fee, etc.)
+ */
+export function useGlobalConfig() {
+    const client = useSuiClient();
+    const [config, setConfig] = useState<any>(null);
+    const [fee, setFee] = useState<number>(0.1); // Default fallback
+    const [loading, setLoading] = useState(false);
+
+    const fetchConfig = useCallback(async () => {
+        if (!GLOBAL_CONFIG_ID) return;
+
+        setLoading(true);
+        try {
+            const result = await client.getObject({
+                id: GLOBAL_CONFIG_ID,
+                options: {
+                    showContent: true,
+                },
+            });
+
+            if (result.data?.content && 'fields' in result.data.content) {
+                const fields = result.data.content.fields as any;
+                setConfig(fields);
+
+                // fee_percentage is in basis points (e.g. 10 = 0.1%)
+                // Denominator is 10000
+                if (fields.fee_percentage) {
+                    setFee(parseFloat(fields.fee_percentage) / 100);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch global config:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [client]);
+
+    // Auto load
+    useState(() => {
+        fetchConfig();
+    });
+
+    return { config, fee, loading };
 }

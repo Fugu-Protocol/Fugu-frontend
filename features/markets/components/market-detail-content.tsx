@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BarChart, Clock, Share2, Star, ArrowLeft } from "lucide-react";
+import { BarChart, Clock, Share2, Star, ArrowLeft, Check } from "lucide-react";
 import type { Outcome } from "../types";
 import OutcomeRow from "./outcome-row";
 import TradePanel from "./trade-panel";
@@ -38,10 +38,18 @@ const MarketDetailContent: React.FC<MarketDetailContentProps> = ({ market }) => 
     };
 
     const [selectedOutcome, setSelectedOutcome] = useState<Outcome>(defaultOutcome);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
 
     useEffect(() => {
         setSelectedOutcome(defaultOutcome);
     }, [market]);
+
+    const handleShare = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
     const outcomes: Outcome[] = [defaultOutcome];
 
@@ -93,11 +101,21 @@ const MarketDetailContent: React.FC<MarketDetailContentProps> = ({ market }) => 
                                         </span>
                                     </div>
                                     <div className="flex gap-3 ml-auto">
-                                        <button className="p-2 bg-white hover:bg-slate-50 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none">
-                                            <Star size={20} strokeWidth={2.5} />
+                                        <button
+                                            onClick={() => setIsFavorite(!isFavorite)}
+                                            className="p-2 bg-white hover:bg-slate-50 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none"
+                                        >
+                                            <Star
+                                                size={20}
+                                                strokeWidth={2.5}
+                                                className={isFavorite ? "fill-yellow-400 text-black" : "text-black"}
+                                            />
                                         </button>
-                                        <button className="p-2 bg-white hover:bg-slate-50 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none">
-                                            <Share2 size={20} strokeWidth={2.5} />
+                                        <button
+                                            onClick={handleShare}
+                                            className="p-2 bg-white hover:bg-slate-50 rounded-lg border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none"
+                                        >
+                                            {isCopied ? <Check size={20} strokeWidth={2.5} className="text-green-600" /> : <Share2 size={20} strokeWidth={2.5} />}
                                         </button>
                                     </div>
                                 </div>

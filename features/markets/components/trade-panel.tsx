@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { Info, Loader2 } from "lucide-react";
 import type { Outcome } from "../types";
-import { useCurrentAccount, useConnectWallet } from "@mysten/dapp-kit";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { ConnectButton } from "@mysten/dapp-kit";
 import {
     useBuyShares,
     useSellShares,
     useUserPositions,
+    useGlobalConfig,
     TransactionStatus
 } from "@/lib/contracts/use-fugu-contract";
 import { OUTCOME_YES, OUTCOME_NO } from "@/lib/contracts/fugu-contract";
@@ -18,10 +19,10 @@ interface TradePanelProps {
     marketId?: string; // Real market ID from blockchain
 }
 
-const FEE_PERCENTAGE = 0.1; // 0.1% fee
-
 const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
     const account = useCurrentAccount();
+    const { fee: feePercentage } = useGlobalConfig(); // Fetch dynamic fee
+
     const [orderType, setOrderType] = useState<"buy" | "sell">("buy");
     const [outcomeType, setOutcomeType] = useState<"Yes" | "No">("Yes");
 
@@ -62,7 +63,7 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
     const estimatedCostUSDC = Math.ceil(estimatedCostDollars * 1_000_000 * 1.05); // 6 decimals + 5% slippage/buffer
 
     const potentialWin = sharesAmount * 1; // 1 USDC per share
-    const feeDollars = estimatedCostDollars * (FEE_PERCENTAGE / 100);
+    const feeDollars = estimatedCostDollars * (feePercentage / 100);
 
     const handleQuickAmount = (value: string) => {
         if (value === "Max") {
@@ -228,7 +229,7 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
 
                     {/* Fee info */}
                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200 text-xs">
-                        <span className="text-slate-500">Fee ({FEE_PERCENTAGE}%)</span>
+                        <span className="text-slate-500">Fee ({feePercentage}%)</span>
                         <span className="text-slate-500">Included</span>
                     </div>
                 </div>
