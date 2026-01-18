@@ -1,9 +1,3 @@
-/**
- * Fugu Prediction Market Smart Contract Integration
- * Package ID: 0x48092661b1945d135a01b29449a16f05933e8bc3e603c5634610c408c39e5353
- * Network: Sui Testnet
- */
-
 // Contract Constants
 export const FUGU_PACKAGE_ID = "0x2d5a4531454503ef41c953da0e6f7a5bf5ab0ec15522f426b916363fd2303b16";
 export const FUGU_MODULE = "fugu_core";
@@ -16,6 +10,9 @@ export const USDC_TREASURY_CAP_ID = ""; // USDC TreasuryCap object ID - needs to
 
 // Event types
 export const MARKET_CREATED_EVENT = `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::MarketCreatedEvent`;
+
+export const TESTNET_EXPLORER_URL = "https://testnet.suivision.xyz/txblock/";
+
 
 // Outcome constants
 export const OUTCOME_NO = 0;

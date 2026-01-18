@@ -5,11 +5,10 @@ import { Search, ArrowDownUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-    { label: "Assets", id: "Gold & Silver" },
-    { label: "US Index", id: "Indexes" },
-    { label: "Economics", id: "Economics" },
     { label: "Crypto", id: "Crypto" },
-    { label: "US Stocks", id: "Stocks" },
+    { label: "Stocks", id: "Stocks" },
+    { label: "Assets", id: "Assets" },  // Gold, silver, bronze, oil
+    { label: "Economics", id: "Economics" },
 ];
 
 const FILTERS = ["24h Vol", "Total Vol", "Newest"];

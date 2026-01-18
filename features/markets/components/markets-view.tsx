@@ -63,31 +63,10 @@ const MarketsView = () => {
             let color = "bg-blue-100";
 
             // Simple mapping based on category ID
-            if (m.category === CATEGORY.ECONOMICS) {
-                categoryName = "Economics";
-                color = "bg-yellow-100";
-                defaultImage = "https://img.icons8.com/color/200/inflation.png";
-            }
-            else if (m.category === CATEGORY.STOCKS) {
-                categoryName = "Stocks";
-                color = "bg-green-100";
-                defaultImage = "https://img.icons8.com/color/200/stocks.png";
-            }
-            else if (m.category === CATEGORY.CRYPTO) {
-                categoryName = "Crypto";
-                color = "bg-blue-100";
-                defaultImage = "https://cryptologos.cc/logos/bitcoin-btc-logo.png";
-            }
-            else if (m.category === CATEGORY.GOLD_SILVER) {
-                categoryName = "Gold & Silver";
-                color = "bg-orange-100";
-                defaultImage = "https://img.icons8.com/color/200/gold-bars.png";
-            }
-            else if (m.category === CATEGORY.INDEXES) {
-                categoryName = "Indexes";
-                color = "bg-purple-100";
-                defaultImage = "https://img.icons8.com/color/200/sp-500.png";
-            }
+            if (m.category === CATEGORY.CRYPTO) { categoryName = "Crypto"; color = "bg-blue-100"; }
+            else if (m.category === CATEGORY.STOCKS) { categoryName = "Stocks"; color = "bg-green-100"; }
+            else if (m.category === CATEGORY.ASSETS) { categoryName = "Assets"; color = "bg-orange-100"; }
+            else if (m.category === CATEGORY.ECONOMICS_INDICATORS) { categoryName = "Economics"; color = "bg-yellow-100"; }
 
             return {
                 id: parseInt(m.market_id.slice(0, 8), 16),
@@ -128,8 +107,7 @@ const MarketsView = () => {
             filtered = filtered.filter(market => {
                 // Map category labels to actual category values
                 const categoryMap: Record<string, string> = {
-                    "Gold & Silver": "Gold & Silver",
-                    "Indexes": "Indexes",
+                    "Assets": "Assets",
                     "Economics": "Economics",
                     "Crypto": "Crypto",
                     "Stocks": "Stocks",

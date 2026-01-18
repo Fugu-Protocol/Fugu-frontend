@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Info, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Info, Loader2, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import type { Outcome } from "../types";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { ConnectButton } from "@mysten/dapp-kit";
 import {
     useBuyShares,
+    useAddToPosition,
     useSellShares,
     useUserPositions,
+    useUserUSDCCoins,
     useGlobalConfig,
     TransactionStatus
 } from "@/lib/contracts/use-fugu-contract";
-import { OUTCOME_YES, OUTCOME_NO } from "@/lib/contracts/fugu-contract";
+import { OUTCOME_YES, OUTCOME_NO, TESTNET_EXPLORER_URL } from "@/lib/contracts/fugu-contract";
 
 interface TradePanelProps {
     outcome: Outcome;
@@ -30,20 +33,25 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
     const [sharesAmount, setSharesAmount] = useState<number>(10);
 
     const { buyShares, status: buyStatus, error: buyError, txDigest: buyDigest } = useBuyShares();
+    const { addToPosition, status: addStatus, error: addError, txDigest: addDigest } = useAddToPosition();
     const { sellShares, status: sellStatus, error: sellError, txDigest: sellDigest } = useSellShares();
     const { positions, fetchPositions } = useUserPositions();
+    const { coins: usdcCoins, totalBalance: usdcBalance, fetchCoins: fetchUSDCCoins, getLargestCoin } = useUserUSDCCoins();
 
-    // Re-fetch positions when account changes or after tx
+    // Re-fetch positions and USDC coins when account changes or after tx
     useEffect(() => {
         if (account) {
             fetchPositions();
+            fetchUSDCCoins();
         }
-    }, [account, fetchPositions, buyStatus, sellStatus]);
+    }, [account, fetchPositions, fetchUSDCCoins, buyStatus, addStatus, sellStatus]);
 
-    const isLoading = buyStatus === "pending" || sellStatus === "pending";
-    const status = orderType === "buy" ? buyStatus : sellStatus;
-    const error = orderType === "buy" ? buyError : sellError;
-    const txDigest = orderType === "buy" ? buyDigest : sellDigest;
+    const isLoading = buyStatus === "pending" || addStatus === "pending" || sellStatus === "pending";
+    const status = orderType === "buy"
+        ? (buyStatus === "pending" || buyStatus === "success" || buyStatus === "error" ? buyStatus : addStatus)
+        : sellStatus;
+    const error = orderType === "buy" ? (buyError || addError) : sellError;
+    const txDigest = orderType === "buy" ? (buyDigest || addDigest) : sellDigest;
 
     // Display Logic for Prices
     const baseYesPrice = outcome.yesPrice;
@@ -77,36 +85,151 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
 
     const handleTrade = async () => {
         if (!marketId) {
-            alert("Market ID not found (this might be a mock market)");
+            toast.error("Market ID not found (this might be a mock market)");
             return;
         }
 
         if (orderType === "buy") {
-            const side = outcomeType === "Yes" ? OUTCOME_YES : OUTCOME_NO;
-            await buyShares(marketId, sharesAmount, side, estimatedCostUSDC);
-        } else {
-            // Sell logic
-            // Need to find position
-            const side = outcomeType === "Yes" ? OUTCOME_YES : OUTCOME_NO;
-            // Find position for this market and side
-            // Position struct has: market_id, outcome, shares
-            // positions data comes from getOwnedObjects, likely parsedJson or similar
-            // We need to parse fields.
-            // But useUserPositions returns `data` from getOwnedObjects with showContent: true
-
-            const position = positions.find(p => {
-                const content = p.data?.content as any;
-                return content?.fields?.market_id === marketId &&
-                    content?.fields?.outcome === side;
-            });
-
-            if (!position) {
-                alert("No position found to sell for this outcome.");
+            // Get user's USDC coin for payment
+            const largestCoin = getLargestCoin();
+            if (!largestCoin) {
+                toast.error("No USDC coins found in your wallet. Please get some USDC first.");
                 return;
             }
 
-            const positionId = position.data?.objectId;
-            await sellShares(marketId, positionId, sharesAmount);
+            // Check if user has enough balance
+            if (BigInt(largestCoin.balance) < BigInt(estimatedCostUSDC)) {
+                toast.error(`Insufficient USDC balance. You have ${(Number(usdcBalance) / 1_000_000).toFixed(2)} USDC but need ${estimatedCostDollars.toFixed(2)} USDC`);
+                return;
+            }
+
+            try {
+                const side = outcomeType === "Yes" ? OUTCOME_YES : OUTCOME_NO;
+
+                // Check for existing position
+                const existingPosition = positions.find(p => {
+                    const content = p.data?.content as any;
+                    const fields = content?.fields;
+                    return fields && fields.market_id === marketId && Number(fields.outcome) === side;
+                });
+
+                let result;
+                let actionType = "Bought";
+
+                if (existingPosition) {
+                    // Add to existing position
+                    console.log("Adding to existing position:", existingPosition.data?.objectId);
+                    result = await addToPosition(
+                        marketId,
+                        existingPosition.data?.objectId,
+                        sharesAmount,
+                        estimatedCostUSDC,
+                        largestCoin.coinObjectId
+                    );
+                    actionType = "Added";
+                } else {
+                    // Buy new position
+                    console.log("Buying new position");
+                    result = await buyShares(
+                        marketId,
+                        sharesAmount,
+                        side,
+                        estimatedCostUSDC,
+                        largestCoin.coinObjectId
+                    );
+                }
+
+                if (result?.digest) {
+                    toast.success(
+                        <div className="flex flex-col gap-2">
+                            <span className="font-bold">🎉 Purchase successful!</span>
+                            <span className="text-sm">{actionType} {sharesAmount} {outcomeType} shares</span>
+                            <a
+                                href={`${TESTNET_EXPLORER_URL}${result.digest}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                            >
+                                View on Explorer <ExternalLink size={14} />
+                            </a>
+                        </div>,
+                        { duration: 8000 }
+                    );
+                }
+            } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Transaction failed");
+            }
+        } else {
+            // Sell logic
+            const side = outcomeType === "Yes" ? OUTCOME_YES : OUTCOME_NO;
+
+            // Debug: log positions to understand structure
+            console.log("Looking for position:", { marketId, side, positions });
+
+            const position = positions.find(p => {
+                const content = p.data?.content as any;
+                const fields = content?.fields;
+
+                if (!fields) {
+                    console.log("Position has no fields:", p);
+                    return false;
+                }
+
+                // Log what we're comparing
+                console.log("Comparing position:", {
+                    positionMarketId: fields.market_id,
+                    targetMarketId: marketId,
+                    positionOutcome: fields.outcome,
+                    targetOutcome: side,
+                    marketIdMatch: fields.market_id === marketId,
+                    outcomeMatch: Number(fields.outcome) === side
+                });
+
+                // market_id might be stored as string or the comparison needs normalization
+                // outcome is stored as u8, so compare as numbers
+                return fields.market_id === marketId &&
+                    Number(fields.outcome) === side;
+            });
+
+            if (!position) {
+                // Show more helpful error with available positions
+                const availablePositions = positions.map(p => {
+                    const content = p.data?.content as any;
+                    return {
+                        marketId: content?.fields?.market_id,
+                        outcome: content?.fields?.outcome,
+                        shares: content?.fields?.shares,
+                    };
+                });
+                console.log("Available positions:", availablePositions);
+                toast.error("No position found to sell for this outcome. Check console for debug info.");
+                return;
+            }
+
+            try {
+                const positionId = position.data?.objectId;
+                const result = await sellShares(marketId, positionId, sharesAmount);
+
+                if (result?.digest) {
+                    toast.success(
+                        <div className="flex flex-col gap-2">
+                            <span className="font-bold">💰 Sale successful!</span>
+                            <span className="text-sm">Sold {sharesAmount} {outcomeType} shares</span>
+                            <a
+                                href={`${TESTNET_EXPLORER_URL}${result.digest}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                            >
+                                View on Explorer <ExternalLink size={14} />
+                            </a>
+                        </div>,
+                        { duration: 8000 }
+                    );
+                }
+            } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Transaction failed");
+            }
         }
     };
 
@@ -236,30 +359,17 @@ const TradePanel: React.FC<TradePanelProps> = ({ outcome, marketId }) => {
 
                 {/* Actions */}
                 {account ? (
-                    <>
-                        <button
-                            onClick={handleTrade}
-                            disabled={isLoading}
-                            className={`w-full py-4 rounded-xl text-white font-black text-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${orderType === "buy"
-                                ? "bg-sky-500 hover:bg-sky-400"
-                                : "bg-rose-500 hover:bg-rose-400"
-                                }`}
-                        >
-                            {isLoading && <Loader2 className="animate-spin" />}
-                            {orderType === "buy" ? "Buy Shares" : "Sell Shares"}
-                        </button>
-
-                        {error && (
-                            <div className="text-red-500 text-sm p-2 bg-red-50 rounded border border-red-200">
-                                Error: {error}
-                            </div>
-                        )}
-                        {status === "success" && (
-                            <div className="text-green-600 text-sm p-2 bg-green-50 rounded border border-green-200 break-words">
-                                Success! TX: {txDigest?.slice(0, 10)}...
-                            </div>
-                        )}
-                    </>
+                    <button
+                        onClick={handleTrade}
+                        disabled={isLoading}
+                        className={`w-full py-4 rounded-xl text-white font-black text-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${orderType === "buy"
+                            ? "bg-sky-500 hover:bg-sky-400"
+                            : "bg-rose-500 hover:bg-rose-400"
+                            }`}
+                    >
+                        {isLoading && <Loader2 className="animate-spin" />}
+                        {orderType === "buy" ? "Buy Shares" : "Sell Shares"}
+                    </button>
                 ) : (
                     <ConnectButton className="w-full py-4 !bg-black !text-white !font-black !text-xl !rounded-xl !border-2 !border-black !shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:!translate-x-[2px] hover:!translate-y-[2px] hover:!shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:!translate-x-[4px] active:!translate-y-[4px] active:!shadow-none transition-all" />
                 )}
