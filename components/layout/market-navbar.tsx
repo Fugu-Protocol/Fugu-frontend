@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ConnectModal, useCurrentAccount, useDisconnectWallet, useResolveSuiNSName, useSuiClientQuery } from "@mysten/dapp-kit";
 import { Wallet, Bell, User, Copy, Settings, Trophy, Zap, LogOut, Check, VolumeX } from "lucide-react";
 import {
     DropdownMenu,
@@ -23,27 +25,51 @@ import MarketCommandMenu from "@/features/markets/components/market-command-menu
 import DepositDialog from "@/components/shared/deposit-dialog";
 
 const MarketNavbar = () => {
-    const [walletConnected, setWalletConnected] = useState(false);
+    const router = useRouter();
+    const account = useCurrentAccount();
+    const { data: suinsName } = useResolveSuiNSName(account?.address);
+    const { mutate: disconnect } = useDisconnectWallet();
+    const walletConnected = !!account;
     const [isCopied, setIsCopied] = useState(false);
+    const [isConnectOpen, setIsConnectOpen] = useState(false);
 
-    // Check for persisted wallet state on mount
-    React.useEffect(() => {
-        const storedState = localStorage.getItem("walletConnected");
-        if (storedState === "true") {
-            setWalletConnected(true);
-        }
-    }, []);
+    // Fetch account balance
+    const { data: balanceData } = useSuiClientQuery(
+        "getBalance",
+        { owner: account?.address || "" },
+        { enabled: !!account }
+    );
 
-    const toggleWallet = () => {
-        const newState = !walletConnected;
-        setWalletConnected(newState);
-        localStorage.setItem("walletConnected", newState.toString());
+    // Calculate balance in SUI (MIST / 10^9)
+    const suiBalance = balanceData ? parseInt(balanceData.totalBalance) / 1_000_000_000 : 0;
+    const formattedBalance = suiBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+
+    // Helper to format address
+    const formatAddress = (addr: string) => {
+        if (!addr) return "";
+        return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
+    // Generate stable username from wallet address
+    const generatedUsername = useMemo(() => {
+        if (!account?.address) return "User";
+        // Create a simple hash from the address to generate a stable random number
+        let hash = 0;
+        for (let i = 0; i < account.address.length; i++) {
+            const char = account.address.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        const randomNum = Math.abs(hash % 10000);
+        return `User${randomNum}`;
+    }, [account?.address]);
+
     const handleCopyAddress = () => {
-        navigator.clipboard.writeText("0x50e4...0FaA");
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
+        if (account?.address) {
+            navigator.clipboard.writeText(account.address);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        }
     };
 
     return (
@@ -79,13 +105,13 @@ const MarketNavbar = () => {
                                 <span className="text-green-600 text-sm group-hover:scale-105 transition-transform origin-right">$120.50</span>
                             </div>
                             <div className="flex flex-col items-end group cursor-pointer">
-                                <span className="text-gray-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider scale-90 origin-right">Cash</span>
-                                <span className="text-blue-600 text-sm group-hover:scale-105 transition-transform origin-right">$50.00</span>
+                                <span className="text-gray-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider scale-90 origin-right">Cash (SUI)</span>
+                                <span className="text-blue-600 text-sm group-hover:scale-105 transition-transform origin-right">{formattedBalance} SUI</span>
                             </div>
                         </div>
 
                         {/* Deposit Button */}
-                        <DepositDialog balance={50.00}>
+                        <DepositDialog balance={suiBalance}>
                             <NeoButton
                                 variant="primary"
                                 size="sm"
@@ -128,12 +154,16 @@ const MarketNavbar = () => {
                             <DropdownMenuContent className="w-72 p-2 bg-white border-gray-200 text-gray-900 rounded-xl mr-4 mt-2 shadow-xl flex flex-col z-[60]">
                                 {/* Wallet Info Header */}
                                 <DropdownMenuItem asChild className="p-0 bg-transparent focus:bg-transparent cursor-pointer">
-                                    <Link href="/profile/0x50e4...0FaA" className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2 border border-gray-100 hover:bg-gray-100 transition-colors w-full">
+                                    <Link href={`/profile/${account?.address}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2 border border-gray-100 hover:bg-gray-100 transition-colors w-full">
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 shadow-inner" />
                                         <div className="flex-1 min-w-0 text-left">
-                                            <p className="text-sm font-bold text-gray-900 truncate">trananhtuandb1</p>
+                                            <p className="text-sm font-bold text-gray-900 truncate">
+                                                {suinsName || generatedUsername}
+                                            </p>
                                             <div className="flex items-center gap-2 mt-0.5" onClick={(e) => e.preventDefault()}>
-                                                <span className="text-xs text-gray-500 bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono">0x50e4...0FaA</span>
+                                                <span className="text-xs text-gray-500 bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono">
+                                                    {account?.address ? formatAddress(account.address) : ""}
+                                                </span>
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
@@ -178,8 +208,9 @@ const MarketNavbar = () => {
 
                                 <DropdownMenuItem
                                     onClick={() => {
-                                        setWalletConnected(false);
-                                        localStorage.setItem("walletConnected", "false");
+                                        disconnect();
+                                        setIsConnectOpen(false);
+                                        router.push("/");
                                     }}
                                     className="flex items-center gap-2 p-2.5 text-sm font-bold text-red-500 focus:bg-red-50 focus:text-red-600 rounded-lg cursor-pointer mt-1"
                                 >
@@ -191,15 +222,21 @@ const MarketNavbar = () => {
                     </>
                 ) : (
                     // Connect Wallet (Replaces Login/Signup)
-                    <NeoButton
-                        onClick={toggleWallet}
-                        variant="primary"
-                        size="sm"
-                        className="text-sm shadow-none"
-                        contentClassName="!py-2.5 !px-6"
-                    >
-                        Connect Wallet
-                    </NeoButton>
+                    <ConnectModal
+                        trigger={
+                            <NeoButton
+                                variant="primary"
+                                size="sm"
+                                className="text-sm shadow-none"
+                                contentClassName="!py-2.5 !px-6 flex items-center gap-2"
+                            >
+                                <Wallet size={16} strokeWidth={2.5} />
+                                Connect Wallet
+                            </NeoButton>
+                        }
+                        open={isConnectOpen}
+                        onOpenChange={setIsConnectOpen}
+                    />
                 )}
             </div>
         </nav>

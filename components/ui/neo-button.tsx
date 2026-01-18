@@ -17,7 +17,7 @@ interface NeoButtonProps extends HTMLMotionProps<"button"> {
 
 const MotionLink = motion.create(Link);
 
-const NeoButton = ({
+const NeoButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, NeoButtonProps>(({
     children,
     onClick,
     variant = "primary",
@@ -28,7 +28,7 @@ const NeoButton = ({
     href,
     contentClassName,
     ...props
-}: NeoButtonProps) => {
+}, ref) => {
     const sizes = {
         sm: "px-3 py-1 text-sm",
         md: "px-6 py-3 text-base",
@@ -107,6 +107,7 @@ const NeoButton = ({
                 href={href}
                 {...(commonProps as any)}
                 onClick={onClick as any}
+                ref={ref as any}
             >
                 {content}
             </MotionLink>
@@ -118,10 +119,13 @@ const NeoButton = ({
             onClick={onClick}
             {...commonProps}
             {...props}
+            ref={ref as any}
         >
             {content}
         </motion.button>
     );
-};
+});
+
+NeoButton.displayName = "NeoButton";
 
 export default NeoButton;

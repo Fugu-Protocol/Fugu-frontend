@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import ChatInterface from "@/components/ai/ChatInterface";
+import { SuiProvider } from "@/components/providers/SuiProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -22,8 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased`}>
-        {children}
-        <ChatInterface />
+        <SuiProvider>
+          {children}
+          <ChatInterface />
+        </SuiProvider>
       </body>
     </html>
   );

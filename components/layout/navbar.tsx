@@ -6,13 +6,22 @@ import { Menu, X, Wallet } from "lucide-react";
 import Image from "next/image";
 import NeoButton from "@/components/ui/neo-button";
 import Link from "next/link";
+import { ConnectModal, useCurrentAccount, useDisconnectWallet, useResolveSuiNSName } from "@mysten/dapp-kit";
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [walletConnected, setWalletConnected] = useState(false);
+    const [isConnectOpen, setIsConnectOpen] = useState(false);
 
-    const toggleWallet = () => {
-        setWalletConnected(!walletConnected);
+    const account = useCurrentAccount();
+    const { mutate: disconnect } = useDisconnectWallet();
+    const { data: suinsName } = useResolveSuiNSName(account?.address);
+
+    const walletConnected = !!account;
+
+    // Helper to format address
+    const formatAddress = (addr: string) => {
+        if (!addr) return "";
+        return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
     return (
@@ -55,15 +64,32 @@ const Navbar = () => {
                 <div className="flex items-center gap-3 md:gap-6">
                     {/* Desktop Wallet/Connect */}
                     <div className="hidden md:flex items-center gap-3">
-                        <NeoButton
-                            onClick={toggleWallet}
-                            variant={walletConnected ? "green" : "primary"}
-                            size="sm"
-                            className=""
-                        >
-                            <Wallet size={18} className="mr-2" />
-                            {walletConnected ? "0x...FUGU" : "Connect Wallet"}
-                        </NeoButton>
+                        {walletConnected ? (
+                            <NeoButton
+                                onClick={() => disconnect()}
+                                variant="green"
+                                size="sm"
+                                className=""
+                            >
+                                <Wallet size={18} className="mr-2" />
+                                {suinsName || (account?.address && formatAddress(account.address))}
+                            </NeoButton>
+                        ) : (
+                            <ConnectModal
+                                trigger={
+                                    <NeoButton
+                                        variant="primary"
+                                        size="sm"
+                                        className=""
+                                    >
+                                        <Wallet size={18} className="mr-2" />
+                                        Connect Wallet
+                                    </NeoButton>
+                                }
+                                open={isConnectOpen}
+                                onOpenChange={setIsConnectOpen}
+                            />
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
