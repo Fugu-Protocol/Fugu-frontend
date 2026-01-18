@@ -4,8 +4,9 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ConnectModal, useCurrentAccount, useDisconnectWallet, useResolveSuiNSName, useSuiClientQuery } from "@mysten/dapp-kit";
+import { ConnectModal, useCurrentAccount, useDisconnectWallet, useResolveSuiNSName } from "@mysten/dapp-kit";
 import { Wallet, Bell, User, Copy, Settings, Trophy, Zap, LogOut, Check, VolumeX } from "lucide-react";
+import { useUserUSDCCoins } from "@/lib/contracts/use-fugu-contract";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,16 +34,19 @@ const MarketNavbar = () => {
     const [isCopied, setIsCopied] = useState(false);
     const [isConnectOpen, setIsConnectOpen] = useState(false);
 
-    // Fetch account balance
-    const { data: balanceData } = useSuiClientQuery(
-        "getBalance",
-        { owner: account?.address || "" },
-        { enabled: !!account }
-    );
+    // Fetch account balance (USDC)
+    const { totalBalance, fetchCoins } = useUserUSDCCoins();
 
-    // Calculate balance in SUI (MIST / 10^9)
-    const suiBalance = balanceData ? parseInt(balanceData.totalBalance) / 1_000_000_000 : 0;
-    const formattedBalance = suiBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    // Re-fetch when account changes
+    React.useEffect(() => {
+        if (account?.address) {
+            fetchCoins();
+        }
+    }, [account?.address, fetchCoins]);
+
+    // Calculate balance in USDC (6 decimals)
+    const usdcBalance = Number(totalBalance) / 1_000_000;
+    const formattedBalance = usdcBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     // Helper to format address
     const formatAddress = (addr: string) => {
@@ -105,13 +109,13 @@ const MarketNavbar = () => {
                                 <span className="text-green-600 text-sm group-hover:scale-105 transition-transform origin-right">$120.50</span>
                             </div>
                             <div className="flex flex-col items-end group cursor-pointer">
-                                <span className="text-gray-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider scale-90 origin-right">Cash (SUI)</span>
-                                <span className="text-blue-600 text-sm group-hover:scale-105 transition-transform origin-right">{formattedBalance} SUI</span>
+                                <span className="text-gray-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider scale-90 origin-right">Cash (USDC)</span>
+                                <span className="text-blue-600 text-sm group-hover:scale-105 transition-transform origin-right">{formattedBalance} USDC</span>
                             </div>
                         </div>
 
                         {/* Deposit Button */}
-                        <DepositDialog balance={suiBalance}>
+                        <DepositDialog balance={usdcBalance}>
                             <NeoButton
                                 variant="primary"
                                 size="sm"

@@ -5,9 +5,18 @@ import { ArrowLeft } from "lucide-react";
 import { MARKETS } from "@/lib/constants";
 import { generateSlug } from "../utils";
 import { useMarketEvents } from "@/lib/contracts/use-fugu-contract";
+import { CATEGORY } from "@/lib/contracts/fugu-contract";
 import MarketDetailContent from "./market-detail-content"; // We'll move content to a sub-component to handle hooks cleanly
 
-
+// Helper function to map category number to string
+const getCategoryName = (categoryNum: number): string => {
+    if (categoryNum === CATEGORY.CRYPTO) return "Crypto";
+    if (categoryNum === CATEGORY.STOCKS) return "Stocks";
+    if (categoryNum === CATEGORY.GOLD_SILVER) return "Comm/Assets";
+    if (categoryNum === CATEGORY.ECONOMICS) return "Economics";
+    if (categoryNum === CATEGORY.INDEXES) return "Indexes";
+    return "Crypto"; // Default fallback
+};
 
 // Mock chart data for visualization
 interface MarketDetailViewProps {
@@ -33,7 +42,7 @@ const MarketDetailView: React.FC<MarketDetailViewProps> = ({ slug }) => {
     if (foundMarket) {
         const adaptedMarket = {
             id: parseInt(foundMarket.market_id.slice(0, 8), 16),
-            category: "Crypto", // Simplified, implement proper mapping if needed
+            category: getCategoryName(foundMarket.category),
             icon: "💰",
             mainIcon: foundMarket.image_url,
             color: "bg-blue-100",

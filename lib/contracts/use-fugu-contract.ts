@@ -40,7 +40,8 @@ export function useBuyShares() {
         marketId: string,
         amountShares: number, // Number of shares to buy
         outcome: typeof OUTCOME_YES | typeof OUTCOME_NO,
-        estimatedCost: number // The amount of USDC to pay (in MIST/smallest unit) - UI must calculate price * amount
+        paymentAmount: number,
+        usdcCoinId: string
     ) => {
         setStatus("pending");
         setError(null);
@@ -75,8 +76,8 @@ export function useBuyShares() {
             // 3. Find primary coin or merge
             let primaryCoinInput;
 
-            // Ensure estimatedCost is an integer for u64
-            const costInt = Math.floor(estimatedCost);
+            // Ensure paymentAmount is an integer for u64
+            const costInt = Math.floor(paymentAmount);
 
             const totalBalance = validCoins.reduce((sum, c) => sum + BigInt(c.balance), BigInt(0));
             if (totalBalance < BigInt(costInt)) {
@@ -133,54 +134,49 @@ export function useBuyShares() {
 }
 
 /**
- * Hook for minting USDC (Faucet)
+ * Hook for adding shares to an existing position
  */
-export function useMintUSDC() {
+export function useAddToPosition() {
     const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
     const [status, setStatus] = useState<TransactionStatus>("idle");
     const [error, setError] = useState<string | null>(null);
     const [txDigest, setTxDigest] = useState<string | null>(null);
 
-    const mint = useCallback(async (address: string, amount: number = 100) => {
+    const addToPosition = useCallback(async (
+        marketId: string,
+        positionId: string,
+        amount: number,
+        paymentAmount: number,
+        usdcCoinId: string
+    ) => {
         setStatus("pending");
         setError(null);
-        setTxDigest(null);
 
         try {
-            const tx = new Transaction();
-
-            // Amount with 6 decimals (1,000,000 = 1 USDC)
-            const mintAmount = BigInt(Math.floor(amount * 1_000_000));
-
-            tx.moveCall({
-                target: FUGU_TARGETS.MINT_USDC,
-                arguments: [
-                    tx.object(USDC_TREASURY_CAP_ID),
-                    tx.pure.u64(mintAmount),
-                    tx.pure.address(address)
-                ]
-            });
-
-            console.log("Minting USDC...", { address, amount: mintAmount.toString(), target: FUGU_TARGETS.MINT_USDC });
+            const tx = createAddToPositionTransaction(
+                marketId,
+                positionId,
+                amount,
+                paymentAmount,
+                usdcCoinId
+            );
 
             const result = await signAndExecute({
                 transaction: tx,
             });
 
-            console.log("Mint success:", result);
             setTxDigest(result.digest);
             setStatus("success");
             return result;
         } catch (err) {
-            console.error("Mint execution failed:", err);
-            const errorMessage = err instanceof Error ? err.message : "Mint failed";
+            const errorMessage = err instanceof Error ? err.message : "Transaction failed";
             setError(errorMessage);
             setStatus("error");
             throw err;
         }
     }, [signAndExecute]);
 
-    return { mint, status, error, txDigest };
+    return { addToPosition, status, error, txDigest };
 }
 
 /**
@@ -258,27 +254,32 @@ export function useRedeemShares() {
     return { redeemShares, status, error, txDigest };
 }
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 /**
  * Hook to fetch user's positions across all markets
  */
 export function useUserPositions() {
     const client = useSuiClient();
     const account = useCurrentAccount();
-    const [positions, setPositions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
-    const fetchPositions = useCallback(async () => {
-        if (!account?.address) return;
+    const fetchPositions = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ["user-positions", account?.address] });
+    }, [queryClient, account?.address]);
 
-        setLoading(true);
-        setError(null);
+    const { data: positions = [], isLoading: loading, error } = useQuery({
+        queryKey: ["user-positions", account?.address],
+        queryFn: async () => {
+            if (!account?.address) return [];
 
-        try {
+            const positionType = `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::Position`;
+            // console.log("Fetching positions for:", account.address);
+
             const result = await client.getOwnedObjects({
                 owner: account.address,
                 filter: {
-                    StructType: `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::Position`,
+                    StructType: positionType,
                 },
                 options: {
                     showContent: true,
@@ -286,17 +287,78 @@ export function useUserPositions() {
                 },
             });
 
-            setPositions(result.data);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to fetch positions";
-            setError(errorMessage);
-        } finally {
-            setLoading(false);
-        }
-    }, [client, account?.address]);
+            // console.log("Fetched positions:", result.data.length);
+            return result.data;
+        },
+        enabled: !!account?.address,
+        refetchOnWindowFocus: true,
+        staleTime: 1000 * 5, // 5 seconds
+    });
 
-    return { positions, loading, error, fetchPositions };
+    return {
+        positions,
+        loading,
+        error: error ? (error as Error).message : null,
+        fetchPositions
+    };
 }
+
+/**
+ * Hook to fetch user's USDC coins for payment
+ */
+export function useUserUSDCCoins() {
+    const client = useSuiClient();
+    const account = useCurrentAccount();
+    const queryClient = useQueryClient();
+
+    const fetchCoins = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ["user-usdc", account?.address] });
+    }, [queryClient, account?.address]);
+
+    const { data, isLoading: loading, error } = useQuery({
+        queryKey: ["user-usdc", account?.address],
+        queryFn: async () => {
+            if (!account?.address) return { coins: [], totalBalance: 0n };
+
+            const usdcType = `${FUGU_PACKAGE_ID}::USDC::USDC`;
+
+            const result = await client.getCoins({
+                owner: account.address,
+                coinType: usdcType,
+            });
+
+            // Calculate total balance
+            const total = result.data.reduce((sum, coin) => {
+                return sum + BigInt(coin.balance);
+            }, 0n);
+
+            return { coins: result.data, totalBalance: total };
+        },
+        enabled: !!account?.address,
+        refetchOnWindowFocus: true,
+    });
+
+    const coins = data?.coins || [];
+    const totalBalance = data?.totalBalance || 0n;
+
+    // Get the largest coin (best for splitting)
+    const getLargestCoin = useCallback(() => {
+        if (coins.length === 0) return null;
+        return coins.reduce((largest, coin) => {
+            return BigInt(coin.balance) > BigInt(largest.balance) ? coin : largest;
+        });
+    }, [coins]);
+
+    return {
+        coins,
+        totalBalance,
+        loading,
+        error: error ? (error as Error).message : null,
+        fetchCoins,
+        getLargestCoin
+    };
+}
+
 
 /**
  * Hook to fetch all market created events
@@ -459,4 +521,53 @@ export function useGlobalConfig() {
     });
 
     return { config, fee, loading };
+}
+
+/**
+ * Hook for minting USDC for testing (Faucet)
+ */
+export function useMintUSDC() {
+    const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+    const [status, setStatus] = useState<TransactionStatus>("idle");
+    const [error, setError] = useState<string | null>(null);
+    const [txDigest, setTxDigest] = useState<string | null>(null);
+
+    const mint = useCallback(async (
+        recipient: string,
+        amount: number // Amount in dollars, e.g. 1000
+    ) => {
+        setStatus("pending");
+        setError(null);
+
+        try {
+            const tx = new Transaction();
+
+            // Amount to mint (multiply by 10^6 for 6 decimals)
+            const mintAmount = Math.floor(amount * 1_000_000);
+
+            tx.moveCall({
+                target: FUGU_TARGETS.MINT_USDC,
+                arguments: [
+                    tx.object(USDC_TREASURY_CAP_ID),
+                    tx.pure.u64(mintAmount),
+                    tx.pure.address(recipient)
+                ],
+            });
+
+            const result = await signAndExecute({
+                transaction: tx,
+            });
+
+            setTxDigest(result.digest);
+            setStatus("success");
+            return result;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : "Minting failed";
+            setError(errorMessage);
+            setStatus("error");
+            throw err;
+        }
+    }, [signAndExecute]);
+
+    return { mint, status, error, txDigest };
 }

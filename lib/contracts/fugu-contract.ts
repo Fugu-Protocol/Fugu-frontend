@@ -1,14 +1,9 @@
-/**
- * Fugu Prediction Market Smart Contract Integration
- * Package ID: 0x48092661b1945d135a01b29449a16f05933e8bc3e603c5634610c408c39e5353
- * Network: Sui Testnet
- */
-
 // Contract Constants
 export const FUGU_PACKAGE_ID = "0x2d5a4531454503ef41c953da0e6f7a5bf5ab0ec15522f426b916363fd2303b16";
 export const FUGU_MODULE = "fugu_core";
 export const USDC_MODULE = "USDC";
-export const USDC_PACKAGE_ID = "0x58502cb7f97a55a837144433983674ddff16405e008d0b6423730030f443ba9f";
+// In this deployment, USDC is part of the Fugu package
+export const USDC_PACKAGE_ID = FUGU_PACKAGE_ID;
 export const USDC_COIN_TYPE = `${USDC_PACKAGE_ID}::USDC::USDC`;
 export const CLOCK_ID = "0x6";
 
@@ -18,6 +13,9 @@ export const USDC_TREASURY_CAP_ID = "0xb222f7e39f0553e6730c07523f236ae7feae738a2
 
 // Event types
 export const MARKET_CREATED_EVENT = `${FUGU_PACKAGE_ID}::${FUGU_MODULE}::MarketCreatedEvent`;
+
+export const TESTNET_EXPLORER_URL = "https://testnet.suivision.xyz/txblock/";
+
 
 // Outcome constants
 export const OUTCOME_NO = 0;

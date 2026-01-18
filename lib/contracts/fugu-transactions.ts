@@ -14,16 +14,31 @@ import {
  * @param marketId - The Market object ID
  * @param amount - Number of shares to buy
  * @param outcome - OUTCOME_YES (1) or OUTCOME_NO (0)
- * @param paymentCoinId - The USDC coin object ID to use for payment
+ * @param paymentAmount - The USDC amount to pay (in smallest units, 6 decimals)
+ * @param usdcCoinId - Optional USDC coin object ID. If not provided, will split from gas
  * @returns Transaction object ready to be signed and executed
  */
 export function createBuySharesTransaction(
     marketId: string,
     amount: number,
     outcome: typeof OUTCOME_YES | typeof OUTCOME_NO,
-    paymentCoinId: string
+    paymentAmount: number,
+    usdcCoinId?: string
 ): Transaction {
     const tx = new Transaction();
+
+    // If a specific USDC coin is provided, use it; otherwise we need to provide one
+    // For now, let's use the provided coin ID and split the exact amount
+    let paymentCoin;
+
+    if (usdcCoinId) {
+        // Split the exact payment amount from the provided USDC coin
+        [paymentCoin] = tx.splitCoins(tx.object(usdcCoinId), [tx.pure.u64(paymentAmount)]);
+    } else {
+        // If no coin provided, this will fail - user needs USDC coins
+        // We could merge all USDC coins first, but let's require a coin ID for now
+        throw new Error("USDC coin ID is required for payment");
+    }
 
     tx.moveCall({
         target: FUGU_TARGETS.BUY_SHARES,
@@ -32,7 +47,7 @@ export function createBuySharesTransaction(
             tx.object(GLOBAL_CONFIG_ID),   // config: &GlobalConfig
             tx.pure.u64(amount),           // amount: u64
             tx.pure.u8(outcome),           // outcome: u8
-            tx.object(paymentCoinId),      // payment: Coin<USDC>
+            paymentCoin,                   // payment: Coin<USDC>
             tx.object(CLOCK_ID),           // clock: &Clock
         ],
     });
@@ -45,16 +60,21 @@ export function createBuySharesTransaction(
  * @param marketId - The Market object ID
  * @param positionId - The Position object ID
  * @param amount - Number of additional shares to buy
- * @param paymentCoinId - The USDC coin object ID to use for payment
+ * @param paymentAmount - The USDC amount to pay (in smallest units, 6 decimals)
+ * @param usdcCoinId - USDC coin object ID to split payment from
  * @returns Transaction object ready to be signed and executed
  */
 export function createAddToPositionTransaction(
     marketId: string,
     positionId: string,
     amount: number,
-    paymentCoinId: string
+    paymentAmount: number,
+    usdcCoinId: string
 ): Transaction {
     const tx = new Transaction();
+
+    // Split the exact payment amount from the provided USDC coin
+    const [paymentCoin] = tx.splitCoins(tx.object(usdcCoinId), [tx.pure.u64(paymentAmount)]);
 
     tx.moveCall({
         target: FUGU_TARGETS.ADD_TO_POSITION,
@@ -63,7 +83,7 @@ export function createAddToPositionTransaction(
             tx.object(GLOBAL_CONFIG_ID),   // config: &GlobalConfig
             tx.object(positionId),         // position: &mut Position
             tx.pure.u64(amount),           // amount: u64
-            tx.object(paymentCoinId),      // payment: Coin<USDC>
+            paymentCoin,                   // payment: Coin<USDC>
             tx.object(CLOCK_ID),           // clock: &Clock
         ],
     });
